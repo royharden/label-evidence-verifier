@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "label-evidence-verifier"
+version = "0.1.0"
+description = "Conservative evidence review for fictional spirits artwork"
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.10,<3"]
+
+[project.scripts]
+labelverify = "labelverify.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["labelverify*"]
