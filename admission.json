@@ -1,0 +1,101 @@
+{
+  "document_kind": "unsigned_documentary_admission_draft",
+  "record_version": 1,
+  "plan": {
+    "reference": "OUTER planning/promoted/PLAN-M16-v1.md",
+    "sha256": "229f8617652982e59c37d58bf4d6425be0adbc67fa7f9d83fdb2ab9402f3aaa0"
+  },
+  "status": "pending",
+  "status_reason": "PENDING - needs Roy; no real admission evidence or signatures supplied",
+  "product_implementation_authorized": false,
+  "p2_p11_disposition": "held_pending_all_six_gates",
+  "foundation_retroactively_admitted": false,
+  "checks": [
+    "W-TEXT",
+    "W-HEAD",
+    "A-FORMAT",
+    "A-MATCH",
+    "N-MATCH",
+    "B-MATCH",
+    "C-MATCH"
+  ],
+  "gates": [
+    {
+      "section4_gate": 1,
+      "name": "primary_final_sources",
+      "status": "pending",
+      "evidence_references": [],
+      "human_confirmation": null,
+      "confirmed_at": null
+    },
+    {
+      "section4_gate": 2,
+      "name": "blind_readings_and_human_ratification",
+      "status": "pending",
+      "evidence_references": [],
+      "human_confirmation": null,
+      "confirmed_at": null
+    },
+    {
+      "section4_gate": 3,
+      "name": "asset_font_and_art_rights",
+      "status": "pending",
+      "evidence_references": [],
+      "human_confirmation": null,
+      "confirmed_at": null
+    },
+    {
+      "section4_gate": 4,
+      "name": "independent_custody_and_boundary",
+      "status": "pending",
+      "evidence_references": [],
+      "human_confirmation": null,
+      "confirmed_at": null
+    },
+    {
+      "section4_gate": 5,
+      "name": "independent_pilots_and_audit",
+      "status": "pending",
+      "evidence_references": [],
+      "human_confirmation": null,
+      "confirmed_at": null
+    },
+    {
+      "section4_gate": 6,
+      "name": "corpus_recipe_and_schema_agreement",
+      "status": "pending",
+      "evidence_references": [],
+      "human_confirmation": null,
+      "confirmed_at": null
+    }
+  ],
+  "appointments": {
+    "non_builder_author_custodian": null,
+    "separate_non_builder_pixel_novelty_auditor": null,
+    "human_confirmer": null,
+    "seed_custody_confirmation": null,
+    "actual_access_boundary_confirmation": null
+  },
+  "pilots": {
+    "status": "pending",
+    "receipt_reference": null,
+    "authored_samples": false
+  },
+  "photos": {
+    "status": "pending",
+    "feasibility_record": null,
+    "if_unavailable": "not_run; photo claims held only"
+  },
+  "admission_signature": null,
+  "signed_at": null,
+  "dispositions": {
+    "pending": "hold dependent implementation; no inferred pass from empty or null fields",
+    "confirmed_rights_interpretation_or_independent_gold_failure": "SKIP_M16",
+    "all_six_pass": "requires actual bound evidence and dated human confirmation; editing this record alone is insufficient"
+  },
+  "limitations": [
+    "Documentary template only; no machine admission schema or validator implemented",
+    "No oracle, hidden data, actors, seed, legal text, asset rights or access evidence authored",
+    "Static construction review is not human-independent or runtime verification"
+  ]
+}
