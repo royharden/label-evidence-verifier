@@ -1,0 +1,138 @@
+{
+  "purpose": "demo_design",
+  "builder_authored": true,
+  "independent_truth": false,
+  "disclaimer": "Synthetic authored observations; fictional assumptions; not legal approval or OCR accuracy; runtime unverified.",
+  "prediction_consumption": "forbidden; future acceptance comparison only",
+  "scenarios": {
+    "DEMO-01": {
+      "expected": [
+        {
+          "check_id": "W-TEXT",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "W-HEAD",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "A-FORMAT",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "A-MATCH",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "N-MATCH",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "B-MATCH",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "C-MATCH",
+          "verdict": "supports",
+          "required_reasons": []
+        }
+      ],
+      "observed": null,
+      "executed": false
+    },
+    "DEMO-02": {
+      "expected": [
+        {
+          "check_id": "W-TEXT",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "W-HEAD",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "A-FORMAT",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "A-MATCH",
+          "verdict": "does_not_support",
+          "required_reasons": []
+        },
+        {
+          "check_id": "N-MATCH",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "B-MATCH",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "C-MATCH",
+          "verdict": "supports",
+          "required_reasons": []
+        }
+      ],
+      "observed": null,
+      "executed": false
+    },
+    "DEMO-03": {
+      "expected": [
+        {
+          "check_id": "W-TEXT",
+          "verdict": "needs_reviewer",
+          "required_reasons": [
+            "INVALID_REGION"
+          ]
+        },
+        {
+          "check_id": "W-HEAD",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "A-FORMAT",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "A-MATCH",
+          "verdict": "supports",
+          "required_reasons": []
+        },
+        {
+          "check_id": "N-MATCH",
+          "verdict": "needs_reviewer",
+          "required_reasons": [
+            "MISSING_EVIDENCE"
+          ]
+        },
+        {
+          "check_id": "B-MATCH",
+          "verdict": "needs_reviewer",
+          "required_reasons": [
+            "AMBIGUOUS_LOCATION"
+          ]
+        },
+        {
+          "check_id": "C-MATCH",
+          "verdict": "supports",
+          "required_reasons": []
+        }
+      ],
+      "observed": null,
+      "executed": false
+    }
+  }
+}
