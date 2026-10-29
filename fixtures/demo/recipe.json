@@ -1,0 +1,30 @@
+{
+  "format": "labelverify-synthetic-recipe-v1",
+  "demo_only": true,
+  "builder_authored": true,
+  "disclaimer": "Synthetic authored observations; fictional assumptions; not legal approval or OCR accuracy; runtime unverified.",
+  "scenario_ids": [
+    "DEMO-01",
+    "DEMO-02",
+    "DEMO-03"
+  ],
+  "canvas": {
+    "width": 960,
+    "height": 480,
+    "panels": [
+      "front",
+      "back"
+    ]
+  },
+  "producer": "labelverify.demo_artwork.build_demo_bundle",
+  "expected_map": "expected.json",
+  "expected_is_prediction_input": false,
+  "assets": "original tiny glyph/geometric source; no third-party fonts/images",
+  "generated_manifest": null,
+  "generated_manifest_status": "not_run; actual hashes computed from bytes only during later authorized invocation",
+  "observations": "synthetic_authored_observations; not OCR",
+  "independence": "delegated stand-in, not human-independent",
+  "legal_accuracy": "not_assessed",
+  "ocr_accuracy": "not_measured",
+  "runtime": "unverified"
+}
