@@ -1,4 +1,4 @@
-"""Strict transport contracts for the OCR-to-report integration seam."""
+"""Strict real transport and synthetic authored demo contracts; runtime unverified."""
 import hashlib
 import math
 from decimal import Decimal
@@ -118,7 +118,7 @@ class Candidate(Contract):
 
 
 class NumericForm(Contract):
-    """Ratified literal affixes around an ASCII decimal; no executable regex."""
+    """Literal affixes around an ASCII decimal; authority is bound separately."""
     prefix: Annotated[str, Field(max_length=80)]
     suffix: Annotated[str, Field(max_length=80)]
     unit: Literal["percent", "mL", "L"]
@@ -201,6 +201,7 @@ class SearchReceipt(Contract):
 
 
 class Report(Contract):
+    kind: Literal["real_evidence_report"] = "real_evidence_report"
     banner: Literal["Evidence review only. Not a label approval or agency determination."] = BANNER
     unassessed_scope: tuple[str, ...] = UNASSESSED
     runtime_status: Literal["unverified_source_milestone"] = "unverified_source_milestone"
@@ -221,4 +222,133 @@ class Report(Contract):
             raise ValueError("source pins mismatch")
         if self.job_sha256 != hashlib.sha256(self.source.model_dump_json().encode()).hexdigest():
             raise ValueError("source digest mismatch")
+        return self
+
+
+DEMO_BANNER = (
+    "Synthetic demo: original generated artwork and authored observations; fictional assumptions. "
+    "Not legal approval or OCR accuracy. Runtime unverified."
+)
+
+
+class DemoContext(Contract):
+    scenario_id: Literal["DEMO-01", "DEMO-02", "DEMO-03"]
+    assumption_pack_sha256: Digest
+    manifest_sha256: Digest
+    scope: Literal["demo_only"] = "demo_only"
+    observation_provenance: Literal["synthetic_authored"] = "synthetic_authored"
+    legal_sources: Literal["not_acquired"] = "not_acquired"
+    legal_validity: Literal["not_assessed"] = "not_assessed"
+    authority: Literal["delegated_not_personally_signed_by_owner"] = "delegated_not_personally_signed_by_owner"
+    notice_layout: Literal["unsplit", "split_or_ambiguous"] = "unsplit"
+
+
+class DemoObservation(Contract):
+    """Authored values/geometry/quality, never measurements from an OCR engine."""
+    panel_id: str
+    words: Annotated[tuple[Word, ...], Field(max_length=10_000)]
+    status: Literal["ok", "failed", "timeout"]
+    contrast_quality: Unit | None
+    sharpness_quality: Unit | None
+    hard_quality_reasons: tuple[Literal["POOR_IMAGE_BLUR", "POOR_IMAGE_CONTRAST", "HIGHLIGHT_OVER_EVIDENCE", "LOW_PIXEL_DENSITY", "SKEW"], ...] = ()
+
+
+class DemoCandidate(Contract):
+    check_id: Check
+    value: Annotated[str, Field(min_length=1, max_length=20_000)]
+    proposed: Region
+    provenance: Literal["synthetic_authored"]
+
+
+class DemoPolicyRef(Contract):
+    """Fictional assumptions; deliberately has no human/legal ratification fields."""
+    check_id: Check
+    version: Literal["demo-assumptions-v1"] = "demo-assumptions-v1"
+    assumption_pack_sha256: Digest
+    scope: Literal["fictional_demo_assumption"] = "fictional_demo_assumption"
+    normalization: Literal["whitespace", "nfc_case_whitespace", "case_whitespace"]
+    numeric_forms: Annotated[tuple[NumericForm, ...], Field(max_length=20)] = ()
+    expected_text: str | None = None
+    split_warning_policy: Literal["review"] = "review"
+
+
+class DemoJob(Contract):
+    kind: Literal["synthetic_demo_job"] = "synthetic_demo_job"
+    context: DemoContext
+    application: Application
+    panels: Annotated[tuple[Panel, ...], Field(min_length=1, max_length=2)]
+    observations: Annotated[tuple[DemoObservation, ...], Field(max_length=2)]
+    candidates: Annotated[tuple[DemoCandidate, ...], Field(max_length=70)]
+    pins: Pins
+    threshold: Annotated[float, Field(ge=0.5, le=0.5, allow_inf_nan=False)] = 0.5
+
+    @model_validator(mode="after")
+    def valid_observations(self):
+        panel_ids = [p.panel_id for p in self.panels]
+        observation_ids = [o.panel_id for o in self.observations]
+        if len(set(panel_ids)) != len(panel_ids) or len(set(observation_ids)) != len(observation_ids):
+            raise ValueError("duplicate demo panel/observation identity")
+        if sum(p.width * p.height for p in self.panels) > 40_000_000:
+            raise ValueError("total pixel cap exceeded")
+        panels = {p.panel_id: p for p in self.panels}
+        for observation in self.observations:
+            if observation.panel_id not in panels:
+                raise ValueError("unknown authored-observation panel")
+            if len({w.word_id for w in observation.words}) != len(observation.words):
+                raise ValueError("duplicate authored word identity")
+            panel = panels[observation.panel_id]
+            if any(w.box.x1 > panel.width or w.box.y1 > panel.height for w in observation.words):
+                raise ValueError("authored word outside panel")
+        return self
+
+
+class DemoFinding(Contract):
+    check_id: Check
+    verdict: Verdict
+    observed: str | None = None
+    normalized: str | None = None
+    policy: DemoPolicyRef
+    proposed: Region | None = None
+    candidate_provenance: Literal["synthetic_authored"] | None = None
+    evidence: Region | None = None
+    reasons: tuple[str, ...]
+    score: Unit | None = None
+    assessment_scope: Literal["synthetic_authored_evidence_only"] = "synthetic_authored_evidence_only"
+
+
+class DemoSearchReceipt(Contract):
+    panel_id: str
+    panel_sha256: Digest
+    recognition_status: Literal["ok", "failed", "timeout", "missing"]
+    word_count: Annotated[int, Field(ge=0, le=10_000)]
+    observation_provenance: Literal["synthetic_authored"] = "synthetic_authored"
+    search_policy: Literal["present-only-v1; no measured OCR or verified absence"] = "present-only-v1; no measured OCR or verified absence"
+
+
+class DemoReport(Contract):
+    kind: Literal["synthetic_demo_report"] = "synthetic_demo_report"
+    banner: Literal["Evidence review only. Not a label approval or agency determination."] = BANNER
+    demo_banner: Literal["Synthetic demo: original generated artwork and authored observations; fictional assumptions. Not legal approval or OCR accuracy. Runtime unverified."] = DEMO_BANNER
+    unassessed_scope: tuple[str, ...] = UNASSESSED
+    runtime_status: Literal["unverified_source_milestone"] = "unverified_source_milestone"
+    job_sha256: Digest
+    pins: Pins
+    source: DemoJob
+    findings: tuple[DemoFinding, ...]
+    search_receipt: tuple[DemoSearchReceipt, ...]
+
+    @model_validator(mode="after")
+    def complete_demo_record(self):
+        if self.unassessed_scope != UNASSESSED:
+            raise ValueError("unassessed scope must be retained")
+        if tuple(f.check_id for f in self.findings) != CHECKS:
+            raise ValueError("all seven ordered demo findings required")
+        if self.pins != self.source.pins:
+            raise ValueError("demo source pins mismatch")
+        if self.job_sha256 != hashlib.sha256(self.source.model_dump_json().encode()).hexdigest():
+            raise ValueError("demo source digest mismatch")
+        for finding in self.findings:
+            if (finding.policy.check_id != finding.check_id
+                    or finding.policy.assumption_pack_sha256 != self.source.context.assumption_pack_sha256):
+                raise ValueError("demo policy binding mismatch")
         return self
