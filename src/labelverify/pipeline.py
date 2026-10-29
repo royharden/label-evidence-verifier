@@ -1,10 +1,14 @@
-"""Conservative F1 present-evidence path; no OCR, source fetching or model execution."""
+"""Real evidence and synthetic authored demo paths; no legal/OCR accuracy claim.
+
+Runtime unverified. No OCR, source fetching or model execution occurs here.
+"""
 import hashlib
 import re
 import unicodedata
 from decimal import Decimal, InvalidOperation
 
 from .contracts import CHECKS, Box, Candidate, Finding, Job, Region, Report, RuleRef, SearchReceipt
+from .contracts import DemoCandidate, DemoFinding, DemoJob, DemoPolicyRef, DemoReport, DemoSearchReceipt
 
 
 def normalize(value: str, mode: str) -> str:
@@ -22,7 +26,8 @@ def admitted(rule: RuleRef) -> bool:
                 and rule.citation and rule.as_of and rule.version)
 
 
-def supported(job: Job, candidate: Candidate, rule: RuleRef) -> tuple[Region | None, float | None, tuple[str, ...]]:
+def supported(job: Job | DemoJob, candidate: Candidate | DemoCandidate, rule: RuleRef | DemoPolicyRef) -> tuple[Region | None, float | None, tuple[str, ...]]:
+    observations = job.observations if isinstance(job, DemoJob) else job.ocr
     region = candidate.proposed
     panels = {p.panel_id: (i, p) for i, p in enumerate(job.panels)}
     if region.panel_id not in panels:
@@ -33,7 +38,7 @@ def supported(job: Job, candidate: Candidate, rule: RuleRef) -> tuple[Region | N
             or (region.source_width, region.source_height) != (panel.width, panel.height)
             or region.box.x1 > panel.width or region.box.y1 > panel.height):
         return None, None, ("INVALID_REGION",)
-    ocr = next((o for o in job.ocr if o.panel_id == panel.panel_id), None)
+    ocr = next((o for o in observations if o.panel_id == panel.panel_id), None)
     if ocr is None or ocr.status != "ok":
         return None, None, ("OCR_FAILURE",)
     words = {w.word_id: w for w in ocr.words}
@@ -51,14 +56,14 @@ def supported(job: Job, candidate: Candidate, rule: RuleRef) -> tuple[Region | N
     # Search every panel: do not resolve repeated eligible occurrences by proximity.
     occurrences = 0
     span_len = len(selected)
-    for other in job.ocr:
+    for other in observations:
         if other.status != "ok":
             return None, None, ("OCR_FAILURE",)
         normalized_words = [normalize(w.text, rule.normalization) for w in other.words]
         target_words = target.split()
         for start in range(len(other.words) - span_len + 1):
             occurrences += normalized_words[start:start + span_len] == target_words
-    if len(job.ocr) != len(job.panels):
+    if len(observations) != len(job.panels):
         return None, None, ("OCR_FAILURE",)
     if occurrences != 1:
         return None, None, ("AMBIGUOUS_LOCATION",)
@@ -81,7 +86,7 @@ def supported(job: Job, candidate: Candidate, rule: RuleRef) -> tuple[Region | N
     return final, score, reasons
 
 
-def predicate(job: Job, rule: RuleRef, value: str) -> bool | None:
+def predicate(job: Job | DemoJob, rule: RuleRef | DemoPolicyRef, value: str) -> bool | None:
     """None means policy incomplete/ambiguous; never a negative determination."""
     check = rule.check_id
     if check in ("W-TEXT", "W-HEAD"):
@@ -130,6 +135,8 @@ def predicate(job: Job, rule: RuleRef, value: str) -> bool | None:
 
 
 def assess(job: Job) -> Report:
+    if not isinstance(job, Job):
+        raise ValueError("ordinary assessment requires a genuine Job transport")
     rules = {r.check_id: r for r in job.rules}
     all_rules_ready = set(rules) == set(CHECKS) and all(admitted(r) for r in rules.values())
     findings = []
@@ -169,3 +176,59 @@ def assess(job: Job) -> Report:
                      word_count=next((len(o.words) for o in job.ocr if o.panel_id == p.panel_id), 0)) for p in job.panels)
     return Report(job_sha256=hashlib.sha256(job.model_dump_json().encode()).hexdigest(),
                   pins=job.pins, source=job, findings=tuple(findings), search_receipt=receipt)
+
+
+def assess_demo(job: DemoJob) -> DemoReport:
+    """Synthetic authored observations + fictional assumptions; runtime unverified.
+
+    Reuses pure guards, never creates or admits a genuine Job/RuleRef. Scores
+    are authored demo inputs, not OCR confidence measurements or probabilities.
+    """
+    from .demo_policy import DEMO_POLICY_SHA256, demo_policies
+
+    if not isinstance(job, DemoJob):
+        raise ValueError("demo assessment requires a DemoJob transport")
+    if job.context.assumption_pack_sha256 != DEMO_POLICY_SHA256:
+        raise ValueError("fictional assumption pack digest mismatch")
+    policies = {policy.check_id: policy for policy in demo_policies()}
+    findings = []
+    for check in CHECKS:
+        policy = policies[check]
+        candidates = [candidate for candidate in job.candidates if candidate.check_id == check]
+        reasons: list[str] = []
+        if check in ("W-TEXT", "W-HEAD") and job.context.notice_layout == "split_or_ambiguous":
+            reasons.append("RULE_POLICY_REVIEW")
+        if not candidates:
+            reasons.append("MISSING_EVIDENCE")
+        elif len(candidates) != 1:
+            reasons.append("AMBIGUOUS_LOCATION")
+        candidate = candidates[0] if len(candidates) == 1 else None
+        evidence = score = normalized = None
+        decision = None
+        if candidate is not None:
+            evidence, score, support_reasons = supported(job, candidate, policy)
+            reasons.extend(support_reasons)
+            normalized = normalize(candidate.value, policy.normalization)
+            if not reasons:
+                decision = predicate(job, policy, candidate.value)
+                if decision is None:
+                    reasons.append("RULE_POLICY_REVIEW")
+                if score is None or score < job.threshold:
+                    reasons.append("BELOW_THRESHOLD")
+        verdict = "needs_reviewer" if reasons or decision is None else ("supports" if decision else "does_not_support")
+        findings.append(DemoFinding(
+            check_id=check, verdict=verdict, policy=policy,
+            observed=candidate.value if candidate else None, normalized=normalized,
+            proposed=candidate.proposed if candidate else None,
+            candidate_provenance=candidate.provenance if candidate else None,
+            evidence=evidence, score=score, reasons=tuple(dict.fromkeys(reasons)),
+        ))
+    receipts = tuple(DemoSearchReceipt(
+        panel_id=panel.panel_id, panel_sha256=panel.original_sha256,
+        recognition_status=next((o.status for o in job.observations if o.panel_id == panel.panel_id), "missing"),
+        word_count=next((len(o.words) for o in job.observations if o.panel_id == panel.panel_id), 0),
+    ) for panel in job.panels)
+    return DemoReport(
+        job_sha256=hashlib.sha256(job.model_dump_json().encode()).hexdigest(),
+        pins=job.pins, source=job, findings=tuple(findings), search_receipt=receipts,
+    )
